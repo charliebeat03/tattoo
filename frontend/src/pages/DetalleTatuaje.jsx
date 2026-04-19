@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import BotonWhatsApp from '../components/BotonWhatsApp';
+import LazyImage from '../components/LazyImage';
 import { getPublicStudio, getTatuaje, resolveImageUrl } from '../services/api';
 
 function DetalleTatuaje() {
@@ -56,10 +57,13 @@ function DetalleTatuaje() {
 
       <div className="detail-layout">
         <div className="detail-gallery">
-          <img
+          <LazyImage
             src={resolveImageUrl(activeImage || tatuaje.fotoPrincipal)}
             alt={tatuaje.titulo}
             className="detail-main-image"
+            wrapperClassName="detail-main-shell"
+            loading="eager"
+            sizes="(max-width: 860px) 100vw, 60vw"
           />
 
           <div className="detail-thumbs">
@@ -70,7 +74,13 @@ function DetalleTatuaje() {
                 className={`thumb-button ${activeImage === image ? 'active' : ''}`}
                 onClick={() => setActiveImage(image)}
               >
-                <img src={resolveImageUrl(image)} alt={`${tatuaje.titulo} ${index + 1}`} />
+                <LazyImage
+                  src={resolveImageUrl(image)}
+                  alt={`${tatuaje.titulo} ${index + 1}`}
+                  className="thumb-image"
+                  wrapperClassName="thumb-image-shell"
+                  sizes="96px"
+                />
               </button>
             ))}
           </div>

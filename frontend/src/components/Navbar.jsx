@@ -12,6 +12,7 @@ function Navbar() {
   const [studio, setStudio] = useState(fallbackStudio);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isNavbarCompact, setIsNavbarCompact] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -28,13 +29,47 @@ function Navbar() {
   }, []);
 
   useEffect(() => {
+    setIsMenuOpen(false);
     setIsNavbarVisible(true);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsNavbarVisible(true);
+      document.body.classList.add('body-nav-open');
+    } else {
+      document.body.classList.remove('body-nav-open');
+    }
+
+    return () => {
+      document.body.classList.remove('body-nav-open');
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 640) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     let ticking = false;
 
     const updateNavbar = () => {
+      if (isMenuOpen) {
+        setIsNavbarVisible(true);
+        ticking = false;
+        return;
+      }
+
       const currentScrollY = window.scrollY || 0;
       const previousScrollY = lastScrollYRef.current;
       const scrollDelta = currentScrollY - previousScrollY;
@@ -68,7 +103,7 @@ function Navbar() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [isMenuOpen]);
 
   const navbarClasses = [
     'navbar',
@@ -77,6 +112,32 @@ function Navbar() {
   ]
     .filter(Boolean)
     .join(' ');
+
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const navLinks = (
+    <>
+      <div className="nav-links__header">
+        <p className="eyebrow">Navegacion</p>
+        <button type="button" className="nav-close" onClick={closeMenu} aria-label="Cerrar menu">
+          <span />
+          <span />
+        </button>
+      </div>
+      <NavLink to="/" onClick={closeMenu}>
+        Catalogo
+      </NavLink>
+      <NavLink to="/sobre-nosotros" onClick={closeMenu}>
+        Sobre nosotros
+      </NavLink>
+      <NavLink to="/contacto" onClick={closeMenu}>
+        Contacto
+      </NavLink>
+      <NavLink to="/admin" onClick={closeMenu}>
+        Acceso admin
+      </NavLink>
+    </>
+  );
 
   return (
     <header className={navbarClasses}>
@@ -88,12 +149,28 @@ function Navbar() {
         <p className="brand-note">{studio.slogan}</p>
       </div>
 
-      <nav className="nav-links">
-        <NavLink to="/">Catalogo</NavLink>
-        <NavLink to="/sobre-nosotros">Sobre nosotros</NavLink>
-        <NavLink to="/contacto">Contacto</NavLink>
-        <NavLink to="/admin">Acceso admin</NavLink>
-      </nav>
+      <button
+        type="button"
+        className={`nav-toggle ${isMenuOpen ? 'nav-toggle--active' : ''}`}
+        onClick={() => setIsMenuOpen((current) => !current)}
+        aria-label={isMenuOpen ? 'Cerrar menu' : 'Abrir menu'}
+        aria-expanded={isMenuOpen}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <div className={`nav-drawer ${isMenuOpen ? 'nav-drawer--open' : ''}`}>
+        <button
+          type="button"
+          className="nav-drawer__backdrop"
+          onClick={closeMenu}
+          aria-label="Cerrar menu"
+          tabIndex={isMenuOpen ? 0 : -1}
+        />
+        <nav className="nav-links">{navLinks}</nav>
+      </div>
     </header>
   );
 }

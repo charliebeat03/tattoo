@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import BotonWhatsApp from './BotonWhatsApp';
+import LazyImage from './LazyImage';
 import { resolveImageUrl } from '../services/api';
 
 function TatuajeCard({ tatuaje, whatsappNumber }) {
@@ -7,10 +8,12 @@ function TatuajeCard({ tatuaje, whatsappNumber }) {
 
   return (
     <article className="tattoo-card">
-      <img
+      <LazyImage
         src={resolveImageUrl(tatuaje.fotoPrincipal)}
         alt={tatuaje.titulo}
         className="tattoo-card__image"
+        wrapperClassName="tattoo-card__media"
+        sizes="(max-width: 640px) 46vw, (max-width: 1100px) 50vw, 33vw"
       />
 
       <div className="tattoo-card__content">
