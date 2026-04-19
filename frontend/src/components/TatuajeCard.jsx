@@ -40,6 +40,7 @@ function TatuajeCard({ tatuaje, whatsappNumber }) {
             titulo={tatuaje.titulo}
             precio={tatuaje.precioFinal ?? tatuaje.precio}
             whatsappNumber={whatsappNumber}
+            label="Reservar"
           />
         </div>
       </div>
