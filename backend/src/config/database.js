@@ -15,30 +15,47 @@ const normalizeDatabaseUrl = (value) => {
 };
 
 const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+const isProduction = process.env.NODE_ENV === 'production';
+const commonOptions = {
+  dialect: 'postgres',
+  logging: false,
+  dialectOptions: isProduction
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }
+    : {},
+};
+
+const buildSequelizeFromUrl = (connectionString) => {
+  const parsed = new URL(connectionString);
+  const dialect = parsed.protocol.replace(/:$/, '') || 'postgres';
+
+  return new Sequelize(
+    decodeURIComponent(parsed.pathname.replace(/^\//, '') || 'postgres'),
+    decodeURIComponent(parsed.username),
+    decodeURIComponent(parsed.password),
+    {
+      ...commonOptions,
+      dialect,
+      host: parsed.hostname,
+      port: parsed.port ? Number(parsed.port) : 5432,
+    }
+  );
+};
 
 const sequelize = databaseUrl
-  ? new Sequelize(databaseUrl, {
-      dialect: 'postgres',
-      logging: false,
-      dialectOptions:
-        process.env.NODE_ENV === 'production'
-          ? {
-              ssl: {
-                require: true,
-                rejectUnauthorized: false,
-              },
-            }
-          : {},
-    })
+  ? buildSequelizeFromUrl(databaseUrl)
   : new Sequelize(
       process.env.DB_NAME || 'tattoo_catalogo',
       process.env.DB_USER || 'postgres',
       process.env.DB_PASSWORD || 'postgres',
       {
+        ...commonOptions,
         host: process.env.DB_HOST || 'localhost',
         port: Number(process.env.DB_PORT || 5432),
-        dialect: 'postgres',
-        logging: false,
       }
     );
 
