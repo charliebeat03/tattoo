@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: azojuanitop41-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CLIENT_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_JWT_SECRET
+        sync: false
+      - key: DEFAULT_ADMIN_NAME
+        value: Cuenta desarrollador
+      - key: DEFAULT_ADMIN_EMAIL
+        value: admin@inkportfolio.com
+      - key: DEFAULT_ADMIN_PASSWORD
+        sync: false
+      - key: DEFAULT_ARTIST_EMAIL
+        value: alfredo@azojuanitop41.com
+      - key: DEFAULT_ARTIST_PASSWORD
+        sync: false
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: STORAGE_PROVIDER
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: tatuajes
+
+  - type: static
+    name: azojuanitop41-web
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_WHATSAPP_NUMBER
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

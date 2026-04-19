@@ -1,0 +1,14 @@
+{
+  "name": "tattoo-workspace",
+  "private": true,
+  "scripts": {
+    "db:start": "sudo pg_ctlcluster 16 main start >/dev/null 2>&1 || true; pg_lsclusters",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev -- --host 127.0.0.1",
+    "dev": "npm run db:start && concurrently -k -n API,WEB \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "build": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
