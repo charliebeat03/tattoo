@@ -3,8 +3,21 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, {
+const normalizeDatabaseUrl = (value) => {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  const unquoted = trimmed.replace(/^(['"])(.*)\1$/, '$2');
+
+  return unquoted.replace(/^postgresql:\/\//i, 'postgres://');
+};
+
+const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+
+const sequelize = databaseUrl
+  ? new Sequelize(databaseUrl, {
       dialect: 'postgres',
       logging: false,
       dialectOptions:
