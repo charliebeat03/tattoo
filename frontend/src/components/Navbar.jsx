@@ -118,7 +118,10 @@ function Navbar() {
   const navLinks = (
     <>
       <div className="nav-links__header">
-        <p className="eyebrow">Navegacion</p>
+        <div>
+          <p className="eyebrow">Navegacion</p>
+          <p className="nav-links__copy">Recorre el estudio, promociones y acceso admin sin recargar la vista.</p>
+        </div>
         <button type="button" className="nav-close" onClick={closeMenu} aria-label="Cerrar menu">
           <span />
           <span />
@@ -126,6 +129,9 @@ function Navbar() {
       </div>
       <NavLink to="/" onClick={closeMenu}>
         Catalogo
+      </NavLink>
+      <NavLink to="/promociones" onClick={closeMenu}>
+        Promociones
       </NavLink>
       <NavLink to="/sobre-nosotros" onClick={closeMenu}>
         Sobre nosotros

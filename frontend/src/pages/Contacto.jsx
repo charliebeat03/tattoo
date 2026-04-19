@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import RevealSection from '../components/RevealSection';
 import { getPublicStudio } from '../services/api';
 
 const fallbackStudio = {
@@ -40,7 +41,7 @@ function Contacto() {
 
   return (
     <section className="page section-stack">
-      <section className="section-card">
+      <RevealSection className="section-card">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Contacto</p>
@@ -80,7 +81,7 @@ function Contacto() {
             </div>
           </article>
         </div>
-      </section>
+      </RevealSection>
     </section>
   );
 }

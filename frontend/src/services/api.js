@@ -3,6 +3,7 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const ADMIN_STORAGE_KEY = 'tattoo_admin_session';
 const VISITOR_STORAGE_KEY = 'tattoo_visitor_id';
+const FAVORITES_STORAGE_KEY = 'tattoo_favorite_ids';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -42,6 +43,10 @@ export const buildWhatsAppHref = (titulo, precio, whatsappNumber) => {
 };
 
 export const getAdminSession = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 };
@@ -52,6 +57,40 @@ export const saveAdminSession = (session) => {
 
 export const clearAdminSession = () => {
   localStorage.removeItem(ADMIN_STORAGE_KEY);
+};
+
+export const getFavoriteTattooIds = () => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((value) => Number.isInteger(Number(value))).map(Number) : [];
+  } catch (_error) {
+    return [];
+  }
+};
+
+const syncFavoriteTattooIds = (ids) => {
+  if (typeof window === 'undefined') {
+    return ids;
+  }
+
+  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(ids));
+  window.dispatchEvent(new CustomEvent('tattoo-favorites-updated', { detail: ids }));
+  return ids;
+};
+
+export const toggleFavoriteTattooId = (id) => {
+  const numericId = Number(id);
+  const currentIds = getFavoriteTattooIds();
+  const nextIds = currentIds.includes(numericId)
+    ? currentIds.filter((item) => item !== numericId)
+    : [...currentIds, numericId];
+
+  return syncFavoriteTattooIds(nextIds);
 };
 
 export const getVisitorId = () => {

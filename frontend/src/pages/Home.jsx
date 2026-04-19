@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import CatalogSkeleton from '../components/CatalogSkeleton';
+import RevealSection from '../components/RevealSection';
 import TatuajeCard from '../components/TatuajeCard';
+import useFavoriteTattoos from '../hooks/useFavoriteTattoos';
 import { getCategories, getPublicStudio, getTatuajes } from '../services/api';
 
 const fallbackStudio = {
@@ -16,13 +20,18 @@ const fallbackStudio = {
   artists: [],
 };
 
+const normalizeText = (value) => String(value || '').toLowerCase().trim();
+
 function Home() {
   const [tatuajes, setTatuajes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [studio, setStudio] = useState(fallbackStudio);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isFavorite, toggleFavorite, totalFavorites, favoriteSet } = useFavoriteTattoos();
 
   useEffect(() => {
     const loadHome = async () => {
@@ -46,13 +55,32 @@ function Home() {
     loadHome();
   }, []);
 
-  const filteredTattoos = useMemo(() => {
-    if (selectedCategory === 'all') {
-      return tatuajes;
-    }
+  const visibleArtists = studio.artists || [];
+  const activeOffersList = useMemo(
+    () => tatuajes.filter((tatuaje) => tatuaje.ofertaVigente),
+    [tatuajes]
+  );
 
-    return tatuajes.filter((tatuaje) => tatuaje.category?.slug === selectedCategory);
-  }, [selectedCategory, tatuajes]);
+  const filteredTattoos = useMemo(() => {
+    const search = normalizeText(searchTerm);
+
+    return tatuajes.filter((tatuaje) => {
+      const matchesCategory =
+        selectedCategory === 'all' || tatuaje.category?.slug === selectedCategory;
+      const matchesFavorites = !showFavoritesOnly || favoriteSet.has(tatuaje.id);
+      const searchableText = normalizeText(
+        [
+          tatuaje.titulo,
+          tatuaje.descripcion,
+          tatuaje.category?.nombre,
+          tatuaje.ofertaEtiqueta,
+        ].join(' ')
+      );
+      const matchesSearch = !search || searchableText.includes(search);
+
+      return matchesCategory && matchesFavorites && matchesSearch;
+    });
+  }, [favoriteSet, searchTerm, selectedCategory, showFavoritesOnly, tatuajes]);
 
   const averagePrice = useMemo(() => {
     if (!filteredTattoos.length) {
@@ -67,12 +95,61 @@ function Home() {
     return total / filteredTattoos.length;
   }, [filteredTattoos]);
 
-  const activeOffers = tatuajes.filter((tatuaje) => tatuaje.ofertaVigente).length;
-  const visibleArtists = studio.artists || [];
+  const themedCollections = useMemo(() => {
+    const collections = [];
+
+    if (activeOffersList.length) {
+      collections.push({
+        id: 'promos-activas',
+        title: 'Promos activas',
+        description: 'Piezas con rebaja vigente para cerrar cita rapido.',
+        items: activeOffersList.slice(0, 4),
+      });
+    }
+
+    const selectedByStudio = tatuajes
+      .filter((tatuaje) => tatuaje.destacado || tatuaje.ofertaVigente)
+      .slice(0, 4);
+
+    if (selectedByStudio.length) {
+      collections.push({
+        id: 'seleccion-estudio',
+        title: 'Seleccion del estudio',
+        description: 'Una mezcla de piezas fuertes, precios claros y estilos que representan el catalogo.',
+        items: selectedByStudio,
+      });
+    }
+
+    categories
+      .map((category) => ({
+        id: `category-${category.id}`,
+        title: category.nombre,
+        description: category.descripcion || `Recorrido rapido por ${category.nombre}.`,
+        items: tatuajes.filter((tatuaje) => tatuaje.category?.id === category.id).slice(0, 4),
+      }))
+      .filter((collection) => collection.items.length >= 2)
+      .slice(0, 2)
+      .forEach((collection) => collections.push(collection));
+
+    const favoritesCollection = tatuajes.filter((tatuaje) => favoriteSet.has(tatuaje.id)).slice(0, 4);
+
+    if (favoritesCollection.length) {
+      collections.push({
+        id: 'favoritos-guardados',
+        title: 'Tus favoritos',
+        description: 'Las piezas que marcaste para comparar o revisar con calma.',
+        items: favoritesCollection,
+      });
+    }
+
+    return collections.slice(0, 4);
+  }, [activeOffersList, categories, favoriteSet, tatuajes]);
+
+  const collectionCount = themedCollections.length;
 
   return (
     <section className="page page-home section-stack">
-      <div className="hero" id="catalogo">
+      <RevealSection as="div" className="hero hero--home" id="catalogo">
         <div className="hero-copy-block">
           <p className="eyebrow">Estudio residente</p>
           <h1>{studio.studioName}</h1>
@@ -103,70 +180,199 @@ function Home() {
               <p>Precio medio visible</p>
             </div>
             <div className="hero-stat">
-              <span>{activeOffers || '--'}</span>
+              <span>{activeOffersList.length || '--'}</span>
               <p>Promos activas</p>
             </div>
             <div className="hero-stat">
-              <span>{categories.length || '--'}</span>
-              <p>Categorias de catalogo</p>
+              <span>{collectionCount || '--'}</span>
+              <p>Colecciones tematicas</p>
             </div>
           </div>
         </aside>
-      </div>
+      </RevealSection>
 
-      {loading ? <p className="status-message">Cargando tatuajes...</p> : null}
+      {loading ? <CatalogSkeleton count={8} /> : null}
       {error ? <p className="status-message error">{error}</p> : null}
 
       {!loading && !error ? (
         <>
-          <section className="section-card">
+          <RevealSection className="section-card section-card--accent" delay={60}>
+            <div className="section-heading section-heading--tight">
+              <div>
+                <p className="eyebrow">Promociones</p>
+                <h2>Ofertas activas listas para cerrar cita</h2>
+              </div>
+              <p>
+                Si el estudio activa una rebaja, aqui se concentra la salida mas rapida para clientes que ya
+                vienen buscando precio y disponibilidad.
+              </p>
+            </div>
+
+            <div className="promo-hero-row">
+              <div className="promo-hero-copy">
+                <strong>{activeOffersList.length}</strong>
+                <span>piezas con oferta vigente</span>
+              </div>
+
+              <div className="promo-hero-actions">
+                <Link to="/promociones" className="primary-button">
+                  Ver promociones activas
+                </Link>
+                <button
+                  type="button"
+                  className={`secondary-button ${showFavoritesOnly ? 'is-active' : ''}`}
+                  onClick={() => setShowFavoritesOnly((current) => !current)}
+                >
+                  Favoritos guardados: {totalFavorites}
+                </button>
+              </div>
+            </div>
+          </RevealSection>
+
+          <RevealSection className="section-card" delay={110}>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Colecciones tematicas</p>
+                <h2>Explora el catalogo por bloques curados</h2>
+              </div>
+              <p>
+                Ordenamos el portafolio en conjuntos rapidos para que el visitante encuentre estilo,
+                promociones y referencias sin perderse en una lista larga.
+              </p>
+            </div>
+
+            <div className="collection-grid">
+              {themedCollections.map((collection, index) => (
+                <RevealSection
+                  as="article"
+                  key={collection.id}
+                  className="collection-card"
+                  delay={140 + index * 70}
+                >
+                  <div className="collection-card__head">
+                    <div>
+                      <p className="eyebrow">Coleccion</p>
+                      <h3>{collection.title}</h3>
+                    </div>
+                    <span className="chip chip--ghost">{collection.items.length} piezas</span>
+                  </div>
+                  <p className="card-note">{collection.description}</p>
+
+                  <div className="collection-card__items">
+                    {collection.items.map((tatuaje) => (
+                      <TatuajeCard
+                        key={tatuaje.id}
+                        tatuaje={tatuaje}
+                        whatsappNumber={studio.whatsappNumber}
+                        isFavorite={isFavorite(tatuaje.id)}
+                        onToggleFavorite={toggleFavorite}
+                        compact
+                      />
+                    ))}
+                  </div>
+                </RevealSection>
+              ))}
+            </div>
+          </RevealSection>
+
+          <RevealSection className="section-card section-card--catalog" delay={170}>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Catalogo curado</p>
                 <h2>Tatuajes por categoria</h2>
               </div>
               <p>
-                Filtra por estilo para recorrer mejor un catalogo grande y localizar rapido las piezas que
-                mas se parecen a la idea del cliente.
+                Filtra por estilo, busca por palabras y revisa tus favoritos sin salir del mismo bloque del
+                catalogo.
               </p>
             </div>
 
-            <div className="category-filter-bar">
-              <button
-                type="button"
-                className={`filter-chip ${selectedCategory === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedCategory('all')}
-              >
-                Todas
-              </button>
-              {categories.map((category) => (
+            <div className="catalog-sticky-tools">
+              <div className="catalog-search">
+                <label className="catalog-search__field">
+                  <span className="catalog-search__icon" aria-hidden="true">
+                    ⌕
+                  </span>
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Busca por titulo, estilo o palabra clave"
+                  />
+                </label>
+                {searchTerm ? (
+                  <button type="button" className="catalog-search__clear" onClick={() => setSearchTerm('')}>
+                    Limpiar
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="catalog-sticky-tools__row">
+                <div className="category-filter-bar">
+                  <button
+                    type="button"
+                    className={`filter-chip ${selectedCategory === 'all' ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory('all')}
+                  >
+                    Todas
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className={`filter-chip ${selectedCategory === category.slug ? 'active' : ''}`}
+                      onClick={() => setSelectedCategory(category.slug)}
+                    >
+                      {category.nombre}
+                    </button>
+                  ))}
+                </div>
+
                 <button
-                  key={category.id}
                   type="button"
-                  className={`filter-chip ${selectedCategory === category.slug ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(category.slug)}
+                  className={`filter-chip filter-chip--favorite ${showFavoritesOnly ? 'active' : ''}`}
+                  onClick={() => setShowFavoritesOnly((current) => !current)}
                 >
-                  {category.nombre}
+                  Favoritos {totalFavorites ? `(${totalFavorites})` : ''}
                 </button>
-              ))}
+              </div>
+            </div>
+
+            <div className="catalog-results-bar">
+              <p className="catalog-results-note">
+                Mostrando <strong>{filteredTattoos.length}</strong> piezas de <strong>{tatuajes.length}</strong>.
+              </p>
+              <p className="catalog-results-note catalog-results-note--muted">
+                {showFavoritesOnly
+                  ? 'Modo favoritos activo.'
+                  : 'Activa favoritos para guardar ideas antes de escribir al estudio.'}
+              </p>
             </div>
 
             <div className="tattoo-grid">
               {filteredTattoos.length > 0 ? (
-                filteredTattoos.map((tatuaje) => (
-                  <TatuajeCard
-                    key={tatuaje.id}
-                    tatuaje={tatuaje}
-                    whatsappNumber={studio.whatsappNumber}
-                  />
+                filteredTattoos.map((tatuaje, index) => (
+                  <RevealSection as="div" key={tatuaje.id} delay={180 + index * 20} className="card-reveal-wrap">
+                    <TatuajeCard
+                      tatuaje={tatuaje}
+                      whatsappNumber={studio.whatsappNumber}
+                      isFavorite={isFavorite(tatuaje.id)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  </RevealSection>
                 ))
               ) : (
-                <p className="status-message">No hay tatuajes en esa categoria todavia.</p>
+                <div className="empty-state">
+                  <h3>No encontramos tatuajes con ese cruce de filtros</h3>
+                  <p>
+                    Prueba limpiando la busqueda o quitando el modo favoritos para volver a recorrer todo el catalogo.
+                  </p>
+                </div>
               )}
             </div>
-          </section>
+          </RevealSection>
 
-          <section className="section-card" id="sobre-nosotros">
+          <RevealSection className="section-card" id="sobre-nosotros" delay={210}>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Sobre nosotros</p>
@@ -229,14 +435,16 @@ function Home() {
                   <article className="artist-card">
                     <p className="eyebrow">Perfil publico</p>
                     <h3>Alfredo Abel Sanchez Hidalgo</h3>
-                    <p>El perfil publico del tatuador aparecera aqui cuando haya un admin visible con rol de tatuador.</p>
+                    <p>
+                      El perfil publico del tatuador aparecera aqui cuando haya un admin visible con rol de tatuador.
+                    </p>
                   </article>
                 )}
               </div>
             </div>
-          </section>
+          </RevealSection>
 
-          <section className="section-card" id="contacto">
+          <RevealSection className="section-card" id="contacto" delay={250}>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Localizacion</p>
@@ -259,6 +467,7 @@ function Home() {
                     <strong>WhatsApp:</strong> {studio.whatsappNumber || 'Pendiente'}
                   </li>
                 </ul>
+
                 <div className="inline-links">
                   {studio.instagramUrl ? (
                     <a href={studio.instagramUrl} target="_blank" rel="noreferrer">
@@ -278,7 +487,7 @@ function Home() {
                 </div>
               </article>
             </div>
-          </section>
+          </RevealSection>
         </>
       ) : null}
     </section>

@@ -1,13 +1,22 @@
 import { Link } from 'react-router-dom';
 import BotonWhatsApp from './BotonWhatsApp';
+import FavoriteButton from './FavoriteButton';
 import LazyImage from './LazyImage';
 import { resolveImageUrl } from '../services/api';
 
-function TatuajeCard({ tatuaje, whatsappNumber }) {
+function TatuajeCard({ tatuaje, whatsappNumber, isFavorite = false, onToggleFavorite, compact = false }) {
   const galleryTotal = 1 + (tatuaje.fotos?.length || 0);
+  const cardClassName = ['tattoo-card', compact ? 'tattoo-card--compact' : ''].filter(Boolean).join(' ');
 
   return (
-    <article className="tattoo-card">
+    <article className={cardClassName}>
+      <FavoriteButton
+        active={isFavorite}
+        onClick={() => onToggleFavorite?.(tatuaje.id)}
+        compact={compact}
+        className="tattoo-card__favorite"
+      />
+
       <LazyImage
         src={resolveImageUrl(tatuaje.fotoPrincipal)}
         alt={tatuaje.titulo}
@@ -37,13 +46,13 @@ function TatuajeCard({ tatuaje, whatsappNumber }) {
 
         <div className="tattoo-card__actions">
           <Link to={`/tatuajes/${tatuaje.id}`} className="secondary-button">
-            Ver detalle
+            {compact ? 'Abrir' : 'Ver detalle'}
           </Link>
           <BotonWhatsApp
             titulo={tatuaje.titulo}
             precio={tatuaje.precioFinal ?? tatuaje.precio}
             whatsappNumber={whatsappNumber}
-            label="Reservar"
+            label={compact ? 'WhatsApp' : 'Reservar'}
           />
         </div>
       </div>
