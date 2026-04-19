@@ -109,14 +109,11 @@ textarea {
 }
 
 .navbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1.2rem 5vw;
-  backdrop-filter: blur(18px);
   background: rgba(10, 7, 7, 0.72);
   border-bottom: 1px solid var(--border-soft);
 }
