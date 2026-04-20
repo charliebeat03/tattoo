@@ -1,13 +1,17 @@
-import React from 'react';
+import { DEFAULT_DEVELOPER_NAME } from '../utils/studioContent';
 
 function Footer() {
   return (
     <footer className="site-footer" role="contentinfo">
-      <div className="page">
-        <div style={{padding: '2rem 0', textAlign: 'center'}}>
-          <p style={{margin: 0, color: 'var(--text-muted)'}}>
-            © 2026 Carlos Alejandro Arcia Miranda — Todos los derechos reservados
-          </p>
+      <div className="page site-footer__inner">
+        <div className="site-footer__brand">
+          <p className="eyebrow">Tattoo catalog</p>
+          <strong>Portafolio profesional del estudio</strong>
+        </div>
+
+        <div className="site-footer__meta">
+          <p>Copyright 2026. Todos los derechos reservados.</p>
+          <p>Desarrollo web: {DEFAULT_DEVELOPER_NAME}</p>
         </div>
       </div>
     </footer>

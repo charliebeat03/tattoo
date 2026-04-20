@@ -207,8 +207,8 @@ function DetalleTatuaje() {
           </div>
 
           <div className="tattoo-grid tattoo-grid--related">
-            {relatedTattoos.map((item, index) => (
-              <RevealSection as="div" key={item.id} delay={150 + index * 25} className="card-reveal-wrap">
+            {relatedTattoos.map((item) => (
+              <div key={item.id} className="card-reveal-wrap">
                 <TatuajeCard
                   tatuaje={item}
                   whatsappNumber={studio.whatsappNumber}
@@ -216,7 +216,7 @@ function DetalleTatuaje() {
                   onToggleFavorite={toggleFavorite}
                   compact
                 />
-              </RevealSection>
+              </div>
             ))}
           </div>
         </RevealSection>

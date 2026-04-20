@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import RevealSection from '../components/RevealSection';
 import { getPublicStudio } from '../services/api';
+import { resolveDeveloperName } from '../utils/studioContent';
 
 const fallbackStudio = {
   studioName: 'AzojuanitoP41',
@@ -33,6 +34,7 @@ function SobreNosotros() {
   }, []);
 
   const visibleArtists = studio.artists || [];
+  const developerName = resolveDeveloperName(studio.developerName);
 
   if (loading) {
     return <p className="status-message">Cargando informacion del estudio...</p>;
@@ -62,7 +64,7 @@ function SobreNosotros() {
                 <strong>Direccion:</strong> {studio.direccion || 'Pendiente'}
               </li>
               <li>
-                <strong>Desarrollador:</strong> {studio.developerName || 'Cuenta desarrollador'}
+                <strong>Desarrollador:</strong> {developerName}
               </li>
             </ul>
           </article>
@@ -103,7 +105,7 @@ function SobreNosotros() {
             ) : (
               <article className="artist-card">
                 <p className="eyebrow">Tatuador</p>
-                <h3>Alfredo Abel Sanchez Hidalgo</h3>
+                <h3>Equipo creativo del estudio</h3>
                 <p>El perfil publico del tatuador aparecera aqui cuando haya un admin visible con perfil de tatuador.</p>
               </article>
             )}

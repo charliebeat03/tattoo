@@ -66,15 +66,15 @@ function Promociones() {
         <RevealSection className="section-card">
           {promotions.length > 0 ? (
             <div className="tattoo-grid">
-              {promotions.map((tatuaje, index) => (
-                <RevealSection as="div" key={tatuaje.id} delay={70 + index * 25} className="card-reveal-wrap">
+              {promotions.map((tatuaje) => (
+                <div key={tatuaje.id} className="card-reveal-wrap">
                   <TatuajeCard
                     tatuaje={tatuaje}
                     whatsappNumber={studio.whatsappNumber}
                     isFavorite={isFavorite(tatuaje.id)}
                     onToggleFavorite={toggleFavorite}
                   />
-                </RevealSection>
+                </div>
               ))}
             </div>
           ) : (

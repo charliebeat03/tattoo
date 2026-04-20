@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CatalogSkeleton from '../components/CatalogSkeleton';
 import RevealSection from '../components/RevealSection';
 import TatuajeCard from '../components/TatuajeCard';
 import useFavoriteTattoos from '../hooks/useFavoriteTattoos';
 import { getCategories, getPublicStudio, getTatuajes } from '../services/api';
+import { resolveDeveloperName, resolveLeadArtistName } from '../utils/studioContent';
 
 const fallbackStudio = {
   studioName: 'AzojuanitoP41',
@@ -32,6 +33,7 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isFavorite, toggleFavorite, totalFavorites, favoriteSet } = useFavoriteTattoos();
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   useEffect(() => {
     const loadHome = async () => {
@@ -56,13 +58,15 @@ function Home() {
   }, []);
 
   const visibleArtists = studio.artists || [];
+  const leadArtistName = resolveLeadArtistName(visibleArtists);
+  const developerName = resolveDeveloperName(studio.developerName);
   const activeOffersList = useMemo(
     () => tatuajes.filter((tatuaje) => tatuaje.ofertaVigente),
     [tatuajes]
   );
 
   const filteredTattoos = useMemo(() => {
-    const search = normalizeText(searchTerm);
+    const search = normalizeText(deferredSearchTerm);
 
     return tatuajes.filter((tatuaje) => {
       const matchesCategory =
@@ -80,7 +84,7 @@ function Home() {
 
       return matchesCategory && matchesFavorites && matchesSearch;
     });
-  }, [favoriteSet, searchTerm, selectedCategory, showFavoritesOnly, tatuajes]);
+  }, [deferredSearchTerm, favoriteSet, selectedCategory, showFavoritesOnly, tatuajes]);
 
   const averagePrice = useMemo(() => {
     if (!filteredTattoos.length) {
@@ -156,8 +160,17 @@ function Home() {
           <p className="hero-copy">{studio.slogan}</p>
           <p className="hero-support">
             Catalogo clasificado por categoria, precios claros, promociones temporales y reserva directa
-            por WhatsApp con el trabajo de {visibleArtists[0]?.nombre || 'Alfredo Abel Sanchez Hidalgo'}.
+            por WhatsApp para explorar el trabajo de {leadArtistName} sin friccion.
           </p>
+
+          <div className="hero-actions">
+            <a href="#explorar-catalogo" className="primary-button">
+              Explorar catalogo
+            </a>
+            <Link to="/contacto" className="secondary-button">
+              Reservar cita
+            </Link>
+          </div>
 
           <div className="hero-tags">
             {categories.slice(0, 4).map((category) => (
@@ -275,7 +288,7 @@ function Home() {
             </div>
           </RevealSection>
 
-          <RevealSection className="section-card section-card--catalog" delay={170}>
+          <RevealSection className="section-card section-card--catalog" delay={170} id="explorar-catalogo">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Catalogo curado</p>
@@ -343,23 +356,25 @@ function Home() {
                 Mostrando <strong>{filteredTattoos.length}</strong> piezas de <strong>{tatuajes.length}</strong>.
               </p>
               <p className="catalog-results-note catalog-results-note--muted">
-                {showFavoritesOnly
-                  ? 'Modo favoritos activo.'
-                  : 'Activa favoritos para guardar ideas antes de escribir al estudio.'}
+                {searchTerm !== deferredSearchTerm
+                  ? 'Actualizando resultados...'
+                  : showFavoritesOnly
+                    ? 'Modo favoritos activo.'
+                    : 'Activa favoritos para guardar ideas antes de escribir al estudio.'}
               </p>
             </div>
 
             <div className="tattoo-grid">
               {filteredTattoos.length > 0 ? (
-                filteredTattoos.map((tatuaje, index) => (
-                  <RevealSection as="div" key={tatuaje.id} delay={180 + index * 20} className="card-reveal-wrap">
+                filteredTattoos.map((tatuaje) => (
+                  <div key={tatuaje.id} className="card-reveal-wrap">
                     <TatuajeCard
                       tatuaje={tatuaje}
                       whatsappNumber={studio.whatsappNumber}
                       isFavorite={isFavorite(tatuaje.id)}
                       onToggleFavorite={toggleFavorite}
                     />
-                  </RevealSection>
+                  </div>
                 ))
               ) : (
                 <div className="empty-state">
@@ -393,7 +408,7 @@ function Home() {
                     <strong>Direccion:</strong> {studio.direccion || 'Pendiente'}
                   </li>
                   <li>
-                    <strong>Desarrollador:</strong> {studio.developerName || 'Cuenta desarrollador'}
+                    <strong>Desarrollador:</strong> {developerName}
                   </li>
                 </ul>
               </article>
@@ -434,7 +449,7 @@ function Home() {
                 ) : (
                   <article className="artist-card">
                     <p className="eyebrow">Perfil publico</p>
-                    <h3>Alfredo Abel Sanchez Hidalgo</h3>
+                    <h3>Equipo creativo</h3>
                     <p>
                       El perfil publico del tatuador aparecera aqui cuando haya un admin visible con rol de tatuador.
                     </p>
