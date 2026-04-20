@@ -78,11 +78,31 @@ img {
 }
 
 .lazy-image img {
+  width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
   transform: scale(1.025);
   transition: opacity 0.32s ease, transform 0.4s ease;
+}
+
+.lazy-image__fallback {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 1.2rem;
+  text-align: center;
+  color: var(--text-muted);
+  background:
+    radial-gradient(circle at top, rgba(255, 139, 79, 0.14), transparent 54%),
+    rgba(255, 245, 232, 0.04);
+}
+
+.lazy-image__fallback span {
+  max-width: 10rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .lazy-image.is-loaded img,
@@ -118,6 +138,17 @@ a {
 
 button {
   cursor: pointer;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 194, 123, 0.9),
+    0 0 0 4px rgba(255, 194, 123, 0.18);
 }
 
 input,
@@ -523,7 +554,7 @@ textarea {
 
 .hero-copy,
 .detail-description,
-.tattoo-card p,
+.tattoo-card__summary,
 .status-message {
   color: var(--text-muted);
 }
@@ -613,49 +644,58 @@ textarea {
 
 .tattoo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.35rem;
 }
 
 .tattoo-card {
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   border-radius: 26px;
   position: relative;
-  content-visibility: auto;
-  contain-intrinsic-size: 420px;
+  overflow: hidden;
+  min-height: 100%;
+  background:
+    linear-gradient(180deg, rgba(255, 245, 232, 0.03), rgba(255, 245, 232, 0)),
+    var(--bg-panel);
+  border-color: rgba(255, 245, 232, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tattoo-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 194, 123, 0.2);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.24);
 }
 
 .tattoo-card--compact {
   box-shadow: none;
 }
 
-.tattoo-card--compact .tattoo-card__image {
-  height: 180px;
+.tattoo-card--compact .tattoo-card__media {
+  aspect-ratio: 1 / 1.02;
 }
 
 .tattoo-card--compact .tattoo-card__content {
   padding: 0.95rem;
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
-.tattoo-card--compact .tattoo-card__meta {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+.tattoo-card--compact .tattoo-card__headline {
+  gap: 0.3rem;
 }
 
 .tattoo-card--compact .tattoo-card__meta h3 {
-  font-size: 1.06rem;
-  line-height: 1.05;
+  font-size: 1.02rem;
+  line-height: 1.08;
 }
 
-.tattoo-card--compact .tattoo-card__topline .chip--ghost,
-.tattoo-card--compact .tattoo-card__content p {
-  display: none;
+.tattoo-card--compact .tattoo-card__summary {
+  -webkit-line-clamp: 2;
+  font-size: 0.82rem;
 }
 
 .tattoo-card--compact .tattoo-card__actions {
-  margin-top: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
@@ -669,40 +709,71 @@ textarea {
   font-size: 0.78rem;
 }
 
-.tattoo-card__media {
+.tattoo-card__media-wrap {
+  position: relative;
+}
+
+.tattoo-card__media-link {
   display: block;
+  color: inherit;
+}
+
+.tattoo-card__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
   background: rgba(8, 6, 6, 0.65);
+}
+
+.tattoo-card__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 34%, rgba(10, 7, 7, 0.84) 100%);
+  pointer-events: none;
+}
+
+.tattoo-card__media-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  padding: 1rem;
 }
 
 .tattoo-card__favorite {
   position: absolute;
   top: 0.85rem;
   right: 0.85rem;
-  z-index: 2;
+  z-index: 3;
 }
 
 .tattoo-card__image {
-  height: 300px;
+  height: 100%;
   object-fit: cover;
 }
 
 .tattoo-card__content {
   padding: 1.15rem;
-  display: grid;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   gap: 0.82rem;
 }
 
 .tattoo-card__topline {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .tattoo-card__meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.tattoo-card__headline {
+  display: grid;
+  gap: 0.42rem;
 }
 
 .tattoo-card__meta h3,
@@ -712,7 +783,35 @@ textarea {
   font-size: 1.45rem;
 }
 
-.tattoo-card__actions,
+.tattoo-card__title-link {
+  color: inherit;
+  transition: color 0.18s ease;
+}
+
+.tattoo-card__title-link:hover {
+  color: var(--accent-strong);
+}
+
+.tattoo-card__summary {
+  margin: 0;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tattoo-card__footer {
+  margin-top: auto;
+}
+
+.tattoo-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
 .admin-card__actions {
   display: flex;
   gap: 0.8rem;
@@ -836,6 +935,12 @@ textarea {
   align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
+}
+
+.price-current {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .price-old {
@@ -1521,8 +1626,8 @@ textarea {
     border-radius: 16px;
   }
 
-  .tattoo-card__image {
-    height: 118px;
+  .tattoo-card__media {
+    aspect-ratio: 1 / 1.18;
   }
 
   .tattoo-card__content {
@@ -1535,9 +1640,7 @@ textarea {
   }
 
   .tattoo-card__meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.18rem;
+    gap: 0.55rem;
   }
 
   .tattoo-card__meta h3 {
@@ -1549,8 +1652,9 @@ textarea {
     overflow: hidden;
   }
 
-  .tattoo-card p {
-    display: none;
+  .tattoo-card__summary {
+    font-size: 0.78rem;
+    -webkit-line-clamp: 2;
   }
 
   .chip {
@@ -1560,6 +1664,10 @@ textarea {
 
   .tattoo-card__topline .chip--ghost {
     display: none;
+  }
+
+  .tattoo-card__media-overlay {
+    padding: 0.7rem;
   }
 
   .price-stack {
@@ -1776,8 +1884,6 @@ textarea {
   border-radius: 28px;
   padding: 1.2rem;
   box-shadow: var(--shadow-card);
-  content-visibility: auto;
-  contain-intrinsic-size: 460px;
 }
 
 .collection-card__head {
@@ -1828,8 +1934,6 @@ textarea {
   border-radius: 24px;
   padding: 1.2rem;
   box-shadow: var(--shadow-card);
-  content-visibility: auto;
-  contain-intrinsic-size: 260px;
 }
 
 .artist-grid,
@@ -1963,7 +2067,8 @@ textarea {
 }
 
 .skeleton-card__image {
-  height: 320px;
+  aspect-ratio: 4 / 5;
+  height: auto;
   border-radius: 0;
 }
 
@@ -2250,8 +2355,8 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .tattoo-card__image {
-    height: 104px;
+  .tattoo-card__media {
+    aspect-ratio: 1 / 1.1;
   }
 
   .tattoo-card__content {
@@ -2346,8 +2451,8 @@ textarea {
     font-size: 0.9rem;
   }
 
-  .tattoo-card__image {
-    height: 94px;
+  .tattoo-card__media {
+    aspect-ratio: 1 / 1.06;
   }
 
   .tattoo-card__content {
@@ -2356,12 +2461,16 @@ textarea {
   }
 
   .tattoo-card__meta {
-    gap: 0.12rem;
+    gap: 0.45rem;
   }
 
   .tattoo-card__meta h3 {
     font-size: 0.84rem;
     line-height: 1.02;
+  }
+
+  .tattoo-card__summary {
+    font-size: 0.74rem;
   }
 
   .price-stack {
@@ -2381,8 +2490,8 @@ textarea {
     border-radius: 11px;
   }
 
-  .tattoo-card--compact .tattoo-card__image {
-    height: 102px;
+  .tattoo-card--compact .tattoo-card__media {
+    aspect-ratio: 1 / 1;
   }
 
   .tattoo-card--compact .tattoo-card__content {
@@ -2392,6 +2501,10 @@ textarea {
 
   .tattoo-card--compact .tattoo-card__meta h3 {
     font-size: 0.82rem;
+  }
+
+  .tattoo-card--compact .tattoo-card__summary {
+    font-size: 0.72rem;
   }
 
   .tattoo-card--compact .tattoo-card__actions .secondary-button,
@@ -2441,8 +2554,8 @@ textarea {
     padding-inline: 0.72rem;
   }
 
-  .tattoo-card__image {
-    height: 86px;
+  .tattoo-card__media {
+    aspect-ratio: 1 / 1;
   }
 
   .tattoo-card__content {
@@ -2459,8 +2572,8 @@ textarea {
     font-size: 0.61rem;
   }
 
-  .tattoo-card--compact .tattoo-card__image {
-    height: 92px;
+  .tattoo-card--compact .tattoo-card__media {
+    aspect-ratio: 1 / 0.98;
   }
 
   .lightbox__thumb {

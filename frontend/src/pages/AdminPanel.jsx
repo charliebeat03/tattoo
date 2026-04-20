@@ -536,7 +536,7 @@ function AdminPanel() {
         <div className="login-shell">
           <div className="login-card">
             <p className="eyebrow">Acceso protegido</p>
-            <h1>Panel admin de AzojuanitoP41</h1>
+            <h1>Panel admin de {studioForm.studioName}</h1>
             <p className="hero-copy">
               Solo tatuadores o administradores autorizados pueden gestionar el catalogo, las ofertas,
               el perfil del estudio y los nuevos usuarios del panel.
@@ -584,7 +584,7 @@ function AdminPanel() {
       <div className="admin-header admin-header--dashboard">
         <div>
           <p className="eyebrow">Backoffice del estudio</p>
-          <h1>AzojuanitoP41</h1>
+          <h1>{studioForm.studioName}</h1>
           <p className="brand-note">
             Sesion activa como <strong>{currentAdmin?.nombre}</strong> · {currentAdmin?.profileType || currentAdmin?.role}
           </p>

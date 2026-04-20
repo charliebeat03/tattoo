@@ -10,7 +10,7 @@ function Footer() {
         </div>
 
         <div className="site-footer__meta">
-          <p>Copyright 2026. Todos los derechos reservados.</p>
+          <p>© 2026. Todos los derechos reservados.</p>
           <p>Desarrollo web: {DEFAULT_DEVELOPER_NAME}</p>
         </div>
       </div>

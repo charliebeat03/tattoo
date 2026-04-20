@@ -99,6 +99,49 @@ function Home() {
     return total / filteredTattoos.length;
   }, [filteredTattoos]);
 
+  const editorialSelection = useMemo(() => {
+    if (!tatuajes.length) {
+      return [];
+    }
+
+    const ranked = [...tatuajes].sort((left, right) => {
+      const leftScore =
+        (left.ofertaVigente ? 4 : 0) +
+        Math.min((left.fotos?.length || 0), 3) +
+        (left.category?.id ? 1 : 0);
+      const rightScore =
+        (right.ofertaVigente ? 4 : 0) +
+        Math.min((right.fotos?.length || 0), 3) +
+        (right.category?.id ? 1 : 0);
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return Number(right.precioFinal ?? right.precio) - Number(left.precioFinal ?? left.precio);
+    });
+
+    const selected = [];
+    const usedCategories = new Set();
+
+    ranked.forEach((tatuaje) => {
+      if (selected.length === 4) {
+        return;
+      }
+
+      const categoryKey = tatuaje.category?.id ? `category-${tatuaje.category.id}` : `tattoo-${tatuaje.id}`;
+
+      if (usedCategories.has(categoryKey) && selected.length < 2) {
+        return;
+      }
+
+      usedCategories.add(categoryKey);
+      selected.push(tatuaje);
+    });
+
+    return selected.length ? selected : ranked.slice(0, 4);
+  }, [tatuajes]);
+
   const themedCollections = useMemo(() => {
     const collections = [];
 
@@ -111,16 +154,12 @@ function Home() {
       });
     }
 
-    const selectedByStudio = tatuajes
-      .filter((tatuaje) => tatuaje.destacado || tatuaje.ofertaVigente)
-      .slice(0, 4);
-
-    if (selectedByStudio.length) {
+    if (editorialSelection.length) {
       collections.push({
         id: 'seleccion-estudio',
         title: 'Seleccion del estudio',
-        description: 'Una mezcla de piezas fuertes, precios claros y estilos que representan el catalogo.',
-        items: selectedByStudio,
+        description: 'Una mezcla equilibrada de estilos, referencias y piezas con mejor presencia visual.',
+        items: editorialSelection,
       });
     }
 
@@ -147,7 +186,7 @@ function Home() {
     }
 
     return collections.slice(0, 4);
-  }, [activeOffersList, categories, favoriteSet, tatuajes]);
+  }, [activeOffersList, categories, editorialSelection, favoriteSet, tatuajes]);
 
   const collectionCount = themedCollections.length;
 
@@ -209,86 +248,7 @@ function Home() {
 
       {!loading && !error ? (
         <>
-          <RevealSection className="section-card section-card--accent" delay={60}>
-            <div className="section-heading section-heading--tight">
-              <div>
-                <p className="eyebrow">Promociones</p>
-                <h2>Ofertas activas listas para cerrar cita</h2>
-              </div>
-              <p>
-                Si el estudio activa una rebaja, aqui se concentra la salida mas rapida para clientes que ya
-                vienen buscando precio y disponibilidad.
-              </p>
-            </div>
-
-            <div className="promo-hero-row">
-              <div className="promo-hero-copy">
-                <strong>{activeOffersList.length}</strong>
-                <span>piezas con oferta vigente</span>
-              </div>
-
-              <div className="promo-hero-actions">
-                <Link to="/promociones" className="primary-button">
-                  Ver promociones activas
-                </Link>
-                <button
-                  type="button"
-                  className={`secondary-button ${showFavoritesOnly ? 'is-active' : ''}`}
-                  onClick={() => setShowFavoritesOnly((current) => !current)}
-                >
-                  Favoritos guardados: {totalFavorites}
-                </button>
-              </div>
-            </div>
-          </RevealSection>
-
-          <RevealSection className="section-card" delay={110}>
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Colecciones tematicas</p>
-                <h2>Explora el catalogo por bloques curados</h2>
-              </div>
-              <p>
-                Ordenamos el portafolio en conjuntos rapidos para que el visitante encuentre estilo,
-                promociones y referencias sin perderse en una lista larga.
-              </p>
-            </div>
-
-            <div className="collection-grid">
-              {themedCollections.map((collection, index) => (
-                <RevealSection
-                  as="article"
-                  key={collection.id}
-                  className="collection-card"
-                  delay={140 + index * 70}
-                >
-                  <div className="collection-card__head">
-                    <div>
-                      <p className="eyebrow">Coleccion</p>
-                      <h3>{collection.title}</h3>
-                    </div>
-                    <span className="chip chip--ghost">{collection.items.length} piezas</span>
-                  </div>
-                  <p className="card-note">{collection.description}</p>
-
-                  <div className="collection-card__items">
-                    {collection.items.map((tatuaje) => (
-                      <TatuajeCard
-                        key={tatuaje.id}
-                        tatuaje={tatuaje}
-                        whatsappNumber={studio.whatsappNumber}
-                        isFavorite={isFavorite(tatuaje.id)}
-                        onToggleFavorite={toggleFavorite}
-                        compact
-                      />
-                    ))}
-                  </div>
-                </RevealSection>
-              ))}
-            </div>
-          </RevealSection>
-
-          <RevealSection className="section-card section-card--catalog" delay={170} id="explorar-catalogo">
+          <RevealSection className="section-card section-card--catalog" delay={80} id="explorar-catalogo">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Catalogo curado</p>
@@ -351,7 +311,7 @@ function Home() {
               </div>
             </div>
 
-            <div className="catalog-results-bar">
+            <div className="catalog-results-bar" aria-live="polite">
               <p className="catalog-results-note">
                 Mostrando <strong>{filteredTattoos.length}</strong> piezas de <strong>{tatuajes.length}</strong>.
               </p>
@@ -387,7 +347,86 @@ function Home() {
             </div>
           </RevealSection>
 
-          <RevealSection className="section-card" id="sobre-nosotros" delay={210}>
+          <RevealSection className="section-card section-card--accent" delay={120}>
+            <div className="section-heading section-heading--tight">
+              <div>
+                <p className="eyebrow">Promociones</p>
+                <h2>Ofertas activas listas para cerrar cita</h2>
+              </div>
+              <p>
+                Si el estudio activa una rebaja, aqui se concentra la salida mas rapida para clientes que ya
+                vienen buscando precio y disponibilidad.
+              </p>
+            </div>
+
+            <div className="promo-hero-row">
+              <div className="promo-hero-copy">
+                <strong>{activeOffersList.length}</strong>
+                <span>piezas con oferta vigente</span>
+              </div>
+
+              <div className="promo-hero-actions">
+                <Link to="/promociones" className="primary-button">
+                  Ver promociones activas
+                </Link>
+                <button
+                  type="button"
+                  className={`secondary-button ${showFavoritesOnly ? 'is-active' : ''}`}
+                  onClick={() => setShowFavoritesOnly((current) => !current)}
+                >
+                  Favoritos guardados: {totalFavorites}
+                </button>
+              </div>
+            </div>
+          </RevealSection>
+
+          <RevealSection className="section-card" delay={160}>
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Colecciones tematicas</p>
+                <h2>Explora el catalogo por bloques curados</h2>
+              </div>
+              <p>
+                Ordenamos el portafolio en conjuntos rapidos para que el visitante encuentre estilo,
+                promociones y referencias sin perderse en una lista larga.
+              </p>
+            </div>
+
+            <div className="collection-grid">
+              {themedCollections.map((collection, index) => (
+                <RevealSection
+                  as="article"
+                  key={collection.id}
+                  className="collection-card"
+                  delay={190 + index * 60}
+                >
+                  <div className="collection-card__head">
+                    <div>
+                      <p className="eyebrow">Coleccion</p>
+                      <h3>{collection.title}</h3>
+                    </div>
+                    <span className="chip chip--ghost">{collection.items.length} piezas</span>
+                  </div>
+                  <p className="card-note">{collection.description}</p>
+
+                  <div className="collection-card__items">
+                    {collection.items.map((tatuaje) => (
+                      <TatuajeCard
+                        key={tatuaje.id}
+                        tatuaje={tatuaje}
+                        whatsappNumber={studio.whatsappNumber}
+                        isFavorite={isFavorite(tatuaje.id)}
+                        onToggleFavorite={toggleFavorite}
+                        compact
+                      />
+                    ))}
+                  </div>
+                </RevealSection>
+              ))}
+            </div>
+          </RevealSection>
+
+          <RevealSection className="section-card" id="sobre-nosotros" delay={220}>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Sobre nosotros</p>
@@ -459,7 +498,7 @@ function Home() {
             </div>
           </RevealSection>
 
-          <RevealSection className="section-card" id="contacto" delay={250}>
+          <RevealSection className="section-card" id="contacto" delay={260}>
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Localizacion</p>
