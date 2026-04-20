@@ -13,6 +13,7 @@ function Navbar() {
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isNavbarCompact, setIsNavbarCompact] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFloatingVisible, setIsFloatingVisible] = useState(false);
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -64,25 +65,36 @@ function Navbar() {
     let ticking = false;
 
     const updateNavbar = () => {
-      if (isMenuOpen) {
-        setIsNavbarVisible(true);
-        ticking = false;
-        return;
-      }
-
       const currentScrollY = window.scrollY || 0;
       const previousScrollY = lastScrollYRef.current;
       const scrollDelta = currentScrollY - previousScrollY;
 
+      // compact state when slightly scrolled
       setIsNavbarCompact(currentScrollY > 24);
 
-      if (currentScrollY <= 24) {
+      // if menu open always show header
+      if (isMenuOpen) {
         setIsNavbarVisible(true);
-      } else if (scrollDelta < -6) {
-        setIsNavbarVisible(true);
-      } else if (scrollDelta > 6 && currentScrollY > 110) {
-        setIsNavbarVisible(false);
+        setIsFloatingVisible(false);
+        lastScrollYRef.current = currentScrollY;
+        ticking = false;
+        return;
       }
+
+      // show header only when near top, otherwise hide on downward scroll
+      let shouldShow = isNavbarVisible;
+
+      if (currentScrollY <= 24) {
+        shouldShow = true;
+      } else if (scrollDelta > 6 && currentScrollY > 110) {
+        // user scrolled down quickly past threshold -> hide header
+        shouldShow = false;
+      }
+
+      setIsNavbarVisible(shouldShow);
+
+      // floating button appears when header hidden and scrolled down
+      setIsFloatingVisible(!shouldShow && currentScrollY > 110);
 
       lastScrollYRef.current = currentScrollY;
       ticking = false;
@@ -177,6 +189,14 @@ function Navbar() {
         />
         <nav className="nav-links">{navLinks}</nav>
       </div>
+      <button
+        type="button"
+        className={`nav-floating ${isFloatingVisible ? 'nav-floating--visible' : ''}`}
+        onClick={() => setIsMenuOpen(true)}
+        aria-label="Abrir menú"
+      >
+        <span className="nav-floating__icon" />
+      </button>
     </header>
   );
 }

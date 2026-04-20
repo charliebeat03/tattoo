@@ -8,6 +8,7 @@ import SobreNosotros from './pages/SobreNosotros';
 import Contacto from './pages/Contacto';
 import Promociones from './pages/Promociones';
 import { trackVisit } from './services/api';
+import Footer from './components/Footer';
 
 function App() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function App() {
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
